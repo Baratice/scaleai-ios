@@ -45,12 +45,12 @@ workflows:
           python3 -c "import json;[print('CERT',c['id'],c['attributes'].get('displayName'),c['attributes'].get('expirationDate')) for c in json.load(open('/tmp/certs.json'))]"
           CID=$(python3 -c "import json;cs=sorted(json.load(open('/tmp/certs.json')),key=lambda c:c['attributes'].get('expirationDate') or '');print(cs[-1]['id'])")
           echo "Certificado escolhido: $CID"
-          app-store-connect profiles list --bundle-id-identifier "$BUNDLE_ID" --json > /tmp/profs.json || echo "[]" > /tmp/profs.json
+          app-store-connect bundle-ids profiles --bundle-ids "$BID" --json > /tmp/profs.json || echo "[]" > /tmp/profs.json
           python3 -c "import json;[print('PERFIL',p['id'],p['attributes'].get('name'),p['attributes'].get('profileType'),p['attributes'].get('profileState')) for p in json.load(open('/tmp/profs.json'))]"
           for P in $(python3 -c "import json;[print(p['id']) for p in json.load(open('/tmp/profs.json')) if p['attributes'].get('profileState')!='ACTIVE']"); do
             echo "Apagando perfil invalido $P"; app-store-connect profiles delete "$P" || true
           done
-          app-store-connect profiles create --type IOS_APP_STORE --bundle-id "$BID" --certificate-ids "$CID" --name "ScaleAI App Store Codemagic $(date +%Y%m%d%H%M)" --json
+          app-store-connect profiles create "$BID" --type IOS_APP_STORE --certificate-ids "$CID" --name "ScaleAI App Store Codemagic $(date +%Y%m%d%H%M)" --json
   ios-testflight:
     name: ScaleAI iOS TestFlight
     max_build_duration: 45
