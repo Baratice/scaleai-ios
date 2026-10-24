@@ -1,0 +1,14 @@
+{
+  "appId": "com.base6a8f510d5d31706c1bf917be.app",
+  "appName": "ScaleAI",
+  "webDir": "www",
+  "server": {
+    "url": "https://scaleaimarketing.com",
+    "allowNavigation": ["scaleaimarketing.com", "*.scaleaimarketing.com", "*.base44.app", "*.base44.com"]
+  },
+  "ios": {
+    "appendUserAgent": "ScaleAIApp",
+    "contentInset": "never",
+    "limitsNavigationsToAppBoundDomains": false
+  }
+}
