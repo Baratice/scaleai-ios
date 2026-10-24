@@ -1,0 +1,86 @@
+# App iOS do ScaleAI: casca Capacitor que abre https://scaleaimarketing.com com o modo loja ligado
+# (user agent "ScaleAIApp", ver src/lib/modoLoja.js do ScaleAI). O projeto Xcode e gerado no build.
+# Assinatura: chave "Codemagic Baratice" (Developer Portal) e certificado "Baratice Apple Distribution".
+# Nada secreto neste repositorio.
+definitions:
+  preparar_ios: &preparar_ios
+    name: Projeto iOS
+    script: |
+      npm install --no-audit --no-fund
+      npx cap add ios
+      P=ios/App/App.xcodeproj/project.pbxproj
+      sed -i "" 's/TARGETED_DEVICE_FAMILY = "1,2";/TARGETED_DEVICE_FAMILY = 1;/g' "$P"
+      PL=ios/App/App/Info.plist
+      B=/usr/libexec/PlistBuddy
+      $B -c "Set :CFBundleDisplayName ScaleAI" "$PL" || $B -c "Add :CFBundleDisplayName string ScaleAI" "$PL"
+      $B -c "Add :ITSAppUsesNonExemptEncryption bool false" "$PL" || true
+      $B -c "Add :NSCameraUsageDescription string 'O ScaleAI usa a câmera quando você escolhe tirar uma foto para enviar ao seu produto ou ao suporte.'" "$PL" || true
+      $B -c "Add :NSPhotoLibraryUsageDescription string 'O ScaleAI acessa suas fotos quando você escolhe uma imagem para enviar ao seu produto ou ao suporte.'" "$PL" || true
+      $B -c "Add :NSMicrophoneUsageDescription string 'O ScaleAI usa o microfone apenas quando você grava um vídeo para enviar.'" "$PL" || true
+      $B -c "Delete :UISupportedInterfaceOrientations~ipad" "$PL" || true
+      ICONE=ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png
+      curl -fsSL https://scaleaimarketing.com/app-icon-1024.png -o /tmp/icone.png
+      sips -s format jpeg /tmp/icone.png --out /tmp/icone.jpg
+      sips -s format png -z 1024 1024 /tmp/icone.jpg --out "$ICONE"
+      sips -g pixelWidth -g pixelHeight -g hasAlpha "$ICONE"
+      npx cap sync ios
+workflows:
+  preparar-perfil:
+    name: Preparar perfil App Store
+    max_build_duration: 15
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Codemagic Baratice
+    environment:
+      vars:
+        BUNDLE_ID: com.base6a8f510d5d31706c1bf917be.app
+    scripts:
+      - name: Criar perfil App Store com o certificado existente
+        script: |
+          set -e
+          app-store-connect bundle-ids list --bundle-id-identifier "$BUNDLE_ID" --strict-match-identifier --json > /tmp/bid.json
+          BID=$(python3 -c "import json;d=json.load(open('/tmp/bid.json'));print(d[0]['id'])")
+          echo "Bundle ID resource: $BID"
+          app-store-connect certificates list --type DISTRIBUTION --json > /tmp/certs.json
+          python3 -c "import json;[print('CERT',c['id'],c['attributes'].get('displayName'),c['attributes'].get('expirationDate')) for c in json.load(open('/tmp/certs.json'))]"
+          CID=$(python3 -c "import json;cs=sorted(json.load(open('/tmp/certs.json')),key=lambda c:c['attributes'].get('expirationDate') or '');print(cs[-1]['id'])")
+          echo "Certificado escolhido: $CID"
+          app-store-connect profiles list --bundle-id-identifier "$BUNDLE_ID" --json > /tmp/profs.json || echo "[]" > /tmp/profs.json
+          python3 -c "import json;[print('PERFIL',p['id'],p['attributes'].get('name'),p['attributes'].get('profileType'),p['attributes'].get('profileState')) for p in json.load(open('/tmp/profs.json'))]"
+          for P in $(python3 -c "import json;[print(p['id']) for p in json.load(open('/tmp/profs.json')) if p['attributes'].get('profileState')!='ACTIVE']"); do
+            echo "Apagando perfil invalido $P"; app-store-connect profiles delete "$P" || true
+          done
+          app-store-connect profiles create --type IOS_APP_STORE --bundle-id "$BID" --certificate-ids "$CID" --name "ScaleAI App Store Codemagic $(date +%Y%m%d%H%M)" --json
+  ios-testflight:
+    name: ScaleAI iOS TestFlight
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Codemagic Baratice
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.base6a8f510d5d31706c1bf917be.app
+      xcode: latest
+      node: 22
+      vars:
+        APP_STORE_APPLE_ID: 6826369919
+    scripts:
+      - *preparar_ios
+      - name: Perfis de assinatura
+        script: xcode-project use-profiles
+      - name: Numero do build
+        script: |
+          ULTIMO=$(app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 1)
+          PROXIMO=$(( ${ULTIMO:-1} + 1 ))
+          echo "Build $PROXIMO"
+          sed -i "" "s/CURRENT_PROJECT_VERSION = [0-9]*;/CURRENT_PROJECT_VERSION = $PROXIMO;/g" ios/App/App.xcodeproj/project.pbxproj
+      - name: Gerar IPA
+        script: xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
