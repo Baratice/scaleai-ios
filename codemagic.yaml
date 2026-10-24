@@ -49,7 +49,7 @@ workflows:
       - name: Preencher ficha
         script: |
           pip3 install --quiet --break-system-packages pyjwt cryptography requests || pip3 install --quiet pyjwt cryptography requests
-          python3 asc/asc.py preencher
+          python3 asc/${SCRIPT:-asc.py} ${ACAO:-preencher}
           python3 asc/asc.py ler
   preparar-perfil:
     name: Preparar perfil App Store
