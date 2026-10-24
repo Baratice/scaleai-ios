@@ -2,14 +2,30 @@
 # Ficha do ScaleAI no App Store Connect pela API oficial (chave da integracao "Codemagic Baratice").
 # Uso: python3 asc.py ler | preencher
 # Nunca imprime chaves nem senhas.
-import os, sys, json, time, hashlib, glob
+import os, sys, json, time, hashlib, glob, textwrap
 import jwt, requests
 
 APP_ID = "6826369919"
 API = "https://api.appstoreconnect.apple.com/v1"
 
+def chave():
+    k = os.environ["APP_STORE_CONNECT_PRIVATE_KEY"].strip()
+    if k.startswith("@file:"): k = open(os.path.expanduser(k[6:])).read()
+    elif k.startswith("@env:"): k = os.environ[k[5:]]
+    elif os.path.isfile(k): k = open(k).read()
+    k = k.replace("\\n", "\n").strip()
+    if "BEGIN" not in k:
+        import base64
+        try:
+            d = base64.b64decode(k).decode()
+            if "BEGIN" in d: k = d
+        except Exception: pass
+    if "BEGIN" not in k:
+        k = "-----BEGIN PRIVATE KEY-----\n" + "\n".join(textwrap.wrap(k.replace(" ", ""), 64)) + "\n-----END PRIVATE KEY-----"
+    return k
+
 def token():
-    k = os.environ["APP_STORE_CONNECT_PRIVATE_KEY"]
+    k = chave()
     return jwt.encode({"iss": os.environ["APP_STORE_CONNECT_ISSUER_ID"], "iat": int(time.time()), "exp": int(time.time()) + 1100, "aud": "appstoreconnect-v1"},
                       k, algorithm="ES256", headers={"kid": os.environ["APP_STORE_CONNECT_KEY_IDENTIFIER"], "typ": "JWT"})
 
@@ -33,6 +49,8 @@ def versao():
     return edit[0] if edit else (vs[0] if vs else None)
 
 def ler():
+    k0 = os.environ.get("APP_STORE_CONNECT_PRIVATE_KEY", "")
+    print("FORMATO_CHAVE", {"tam": len(k0), "begin": "BEGIN" in k0, "barra_n": "\\n" in k0, "arroba": k0[:6] if k0.startswith("@") else "", "linhas": k0.count("\n")})
     print("ENV", {k: bool(os.environ.get(k)) for k in ["APP_STORE_CONNECT_PRIVATE_KEY", "APP_STORE_CONNECT_ISSUER_ID", "APP_STORE_CONNECT_KEY_IDENTIFIER", "DEMO_EMAIL", "DEMO_SENHA"]})
     app = get(f"/apps/{APP_ID}")
     a = app.get("data", {}).get("attributes", {})
