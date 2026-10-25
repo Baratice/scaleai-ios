@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="https://app.base44.com/favicon.ico" />
+		<meta
+			name="viewport"
+			content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+		/>
+		<meta name="theme-color" content="#f8fafc" />
+		<meta name="description" content="Preview is loading" />
+		<title>Preview Loading - Base44</title>
+		<style>
+			body {
+				font-family: 'font-base44', -apple-system, BlinkMacSystemFont,
+					'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+					sans-serif;
+				background: white;
+				height: 100vh;
+				margin: 0;
+				padding: 0;
+				overflow: hidden;
+			}
+			.main-heading {
+				color: #001e36;
+				font-size: 100px;
+				font-style: normal;
+				font-weight: 300;
+				line-height: 109px;
+				letter-spacing: -1px;
+				margin: 0;
+			}
+			.error-label {
+				font-size: 32px;
+				font-weight: 400;
+				color: #001e36;
+				margin-bottom: 1rem;
+				letter-spacing: 0.05em;
+			}
+			.body-text {
+				font-size: 24px;
+				color: #000;
+				line-height: 1.6;
+				margin-top: 2rem;
+				font-weight: 300;
+			}
+			.link-text {
+				color: #1e293b;
+				text-decoration: underline;
+				text-decoration-thickness: 1px;
+				text-underline-offset: 2px;
+			}
+			.link-text:hover {
+				color: #ea580c;
+			}
+			.support-text {
+				font-size: 0.875rem;
+				color: #000000;
+			}
+			.support-link {
+				color: #000000;
+				text-decoration: underline;
+				text-decoration-thickness: 1px;
+				text-underline-offset: 2px;
+			}
+			.support-link:hover {
+				color: #1e293b;
+			}
+			.topbar {
+				width: 1602px;
+				height: 76px;
+				top: 1px;
+				left: -2px;
+				position: absolute;
+				opacity: 1;
+				padding-top: 24px;
+				padding-right: 60px;
+				padding-bottom: 24px;
+				padding-left: 60px;
+				display: flex;
+				align-items: center;
+				gap: 40px;
+			}
+			.logo-container {
+				display: flex;
+				align-items: center;
+				width: 114px;
+				height: 28px;
+				opacity: 1;
+			}
+			.content-inner {
+				max-width: 56rem;
+			}
+			.content-container {
+				max-width: 56rem;
+				margin: 0 auto;
+				display: flex;
+				align-items: center;
+				min-height: calc(100vh - 8rem);
+				padding-left: 4%;
+			}
+			.footer-support {
+				position: fixed;
+				bottom: 2rem;
+				left: 50%;
+				transform: translateX(-50%);
+				text-align: center;
+			}
+
+			@media (max-width: 768px) {
+				body {
+					overflow-x: hidden;
+				}
+				.content-container {
+					display: flex;
+					flex-direction: column;
+					align-items: flex-start;
+					justify-content: center;
+					padding-left: 4%;
+					padding-right: 4%;
+					margin: 0 auto;
+					max-width: none;
+					min-height: 100vh;
+					padding-top: 80px;
+					padding-bottom: 120px;
+					box-sizing: border-box;
+				}
+				.error-label {
+					font-size: 20px;
+					font-weight: 400;
+					color: #001e36;
+					margin-bottom: 1rem;
+					letter-spacing: 0.1em;
+				}
+				.main-heading {
+					color: #001e36;
+					font-size: 48px;
+					font-style: normal;
+					font-weight: 300;
+					line-height: 52px;
+					letter-spacing: 0.02em;
+					margin: 0;
+				}
+				.body-text {
+					font-size: 18px;
+					color: #000;
+					line-height: 1.6;
+					margin-top: 2rem;
+					font-weight: 300;
+					letter-spacing: 0.01em;
+				}
+				.topbar {
+					width: 100%;
+					height: auto;
+					top: 0;
+					left: 0;
+					padding: 16px 4%;
+					gap: 20px;
+				}
+				.logo-container {
+					width: 114px;
+					height: 28px;
+				}
+				.footer-support {
+					position: fixed;
+					bottom: 2rem;
+					left: 50%;
+					transform: translateX(-50%);
+					text-align: center;
+					width: auto;
+					height: auto;
+					white-space: nowrap;
+					padding: 0 20px;
+				}
+				.support-text {
+					font-size: 14px;
+					color: #000000;
+					letter-spacing: 0.02em;
+					white-space: nowrap;
+				}
+				.support-link {
+					color: #000000;
+				}
+				.gradient-blob {
+					right: calc(951px);
+				}
+			}
+			.gradient-blob {
+				position: absolute;
+				right: calc(-951px / 2);
+				top: 50%;
+				transform: translateY(-50%) rotate(90deg);
+				width: 951px;
+				height: 755px;
+				flex-shrink: 0;
+				border-radius: 951px;
+				background: radial-gradient(
+					50% 50% at 50% 50%,
+					rgba(255, 85, 0, 0.76) 0%,
+					rgba(255, 234, 166, 0.76) 100%
+				);
+				filter: blur(153.39999389648438px);
+				z-index: -1;
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Gradient Blob -->
+		<div class="gradient-blob"></div>
+
+		<!-- Topbar with Logo -->
+		<div class="topbar">
+			<div class="logo-container">
+				<img
+					src="https://app.base44.com/Logo_v5.png"
+					alt="Base44"
+					width="114"
+					height="28"
+				/>
+			</div>
+		</div>
+
+		<!-- Main Content -->
+		<div class="content-container">
+			<div class="content-inner">
+				<h1 class="main-heading">Preview is starting up</h1>
+
+				<div class="body-text">
+					Your app preview is being prepared.<br />
+					This page will automatically refresh in a few seconds.
+				</div>
+			</div>
+		</div>
+
+		<!-- Footer -->
+		<div class="footer-support">
+			<div class="support-text">
+				Need help? visit our
+				<a href="https://app.base44.com/support" class="support-link"
+					>support center</a
+				>
+			</div>
+		</div>
+
+		<script>
+			// Notify parent window to refresh the preview URL
+			if (window.parent !== window) {
+				window.parent.postMessage(
+					{ type: 'preview:requestRefresh' },
+					'*'
+				);
+			}
+		</script>
+	</body>
+</html>
