@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Assinaturas do ScaleAI na App Store (compra dentro do app, exigencia 3.1.1 da Apple, 02/11/2026).
-# Uso: python3 iap.py ler | criar | revisao
+# Uso: python3 iap.py ler | criar | revisao | nota
 #  - criar: grupo "ScaleAI Planos" + Starter, Pro e Agency mensais, textos pt-BR/en-US/es-MX,
 #           disponibilidade (todos os paises menos a UE) e precos (BRL 97,90 / 197,90 / 297,90 no
 #           Brasil; demais paises pelo equivalente da propria Apple). Idempotente.
@@ -146,6 +146,17 @@ def revisao():
         send("PATCH", f"/subscriptionAppStoreReviewScreenshots/{d['id']}", {"data": {"type": "subscriptionAppStoreReviewScreenshots",
             "id": d["id"], "attributes": {"uploaded": True, "sourceFileChecksum": hashlib.md5(dados).hexdigest()}}})
 
+def nota():
+    # So a nota do revisor (asc/ficha.json "notas") na versao em edicao; nao mexe no resto da ficha.
+    F = json.load(open(os.path.join(os.path.dirname(__file__), "ficha.json")))
+    for v in todos(f"/apps/{APP_ID}/appStoreVersions", limit=20):
+        if v["attributes"].get("appStoreState") in ("READY_FOR_SALE", "REMOVED_FROM_SALE"): continue
+        rd = get(f"/appStoreVersions/{v['id']}/appStoreReviewDetail").get("data")
+        if not rd: print("SEM_REVIEW_DETAIL", v["id"]); continue
+        send("PATCH", f"/appStoreReviewDetails/{rd['id']}", {"data": {"type": "appStoreReviewDetails", "id": rd["id"], "attributes": {"notes": F["notas"]}}})
+        print("NOTA_OK", v["attributes"].get("versionString"), v["attributes"].get("appStoreState"))
+        break
+
 def ler():
     gid = None
     for g in todos(f"/apps/{APP_ID}/subscriptionGroups", limit=50):
@@ -159,5 +170,5 @@ def ler():
     if not gid: print("NENHUM_GRUPO")
 
 if __name__ == "__main__":
-    {"ler": ler, "criar": criar, "revisao": revisao}.get(sys.argv[1] if len(sys.argv) > 1 else "ler", ler)()
+    {"ler": ler, "criar": criar, "revisao": revisao, "nota": nota}.get(sys.argv[1] if len(sys.argv) > 1 else "ler", ler)()
     ler()
