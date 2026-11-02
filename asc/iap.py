@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Assinaturas do ScaleAI na App Store (compra dentro do app, exigencia 3.1.1 da Apple, 02/11/2026).
-# Uso: python3 iap.py ler | criar | revisao | nota
+# Uso: python3 iap.py ler | criar | revisao | nota | notificacoes
 #  - criar: grupo "ScaleAI Planos" + Starter, Pro e Agency mensais, textos pt-BR/en-US/es-MX,
 #           disponibilidade (todos os paises menos a UE) e precos (BRL 97,90 / 197,90 / 297,90 no
 #           Brasil; demais paises pelo equivalente da propria Apple). Idempotente.
@@ -157,6 +157,16 @@ def nota():
         print("NOTA_OK", v["attributes"].get("versionString"), v["attributes"].get("appStoreState"))
         break
 
+URL_NOTIF = "https://scaleaimarketing.com/api/apps/6a8f510d5d31706c1bf917be/functions/appleCompra"
+
+def notificacoes():
+    # URL das notificacoes do servidor da App Store (V2), producao e sandbox.
+    send("PATCH", f"/apps/{APP_ID}", {"data": {"type": "apps", "id": APP_ID, "attributes": {
+        "subscriptionStatusUrl": URL_NOTIF, "subscriptionStatusUrlVersion": "V2",
+        "subscriptionStatusUrlForSandbox": URL_NOTIF, "subscriptionStatusUrlVersionForSandbox": "V2"}}})
+    a = get(f"/apps/{APP_ID}").get("data", {}).get("attributes", {})
+    print("NOTIF", {k: a.get(k) for k in ("subscriptionStatusUrl", "subscriptionStatusUrlVersion", "subscriptionStatusUrlForSandbox", "subscriptionStatusUrlVersionForSandbox")})
+
 def ler():
     gid = None
     for g in todos(f"/apps/{APP_ID}/subscriptionGroups", limit=50):
@@ -170,5 +180,5 @@ def ler():
     if not gid: print("NENHUM_GRUPO")
 
 if __name__ == "__main__":
-    {"ler": ler, "criar": criar, "revisao": revisao, "nota": nota}.get(sys.argv[1] if len(sys.argv) > 1 else "ler", ler)()
+    {"ler": ler, "criar": criar, "revisao": revisao, "nota": nota, "notificacoes": notificacoes}.get(sys.argv[1] if len(sys.argv) > 1 else "ler", ler)()
     ler()
