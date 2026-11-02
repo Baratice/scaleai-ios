@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Assinaturas do ScaleAI na App Store (compra dentro do app, exigencia 3.1.1 da Apple, 02/11/2026).
-# Uso: python3 iap.py ler | criar | revisao | nota | notificacoes
+# Uso: python3 iap.py ler | criar | revisao | nota | notificacoes | testflight
 #  - criar: grupo "ScaleAI Planos" + Starter, Pro e Agency mensais, textos pt-BR/en-US/es-MX,
 #           disponibilidade (todos os paises menos a UE) e precos (BRL 97,90 / 197,90 / 297,90 no
 #           Brasil; demais paises pelo equivalente da propria Apple). Idempotente.
@@ -169,6 +169,33 @@ def notificacoes():
     a = get(f"/apps/{APP_ID}").get("data", {}).get("attributes", {})
     print("NOTIF", {k: a.get(k) for k in ("subscriptionStatusUrl", "subscriptionStatusUrlVersion", "subscriptionStatusUrlForSandbox", "subscriptionStatusUrlVersionForSandbox")})
 
+def testflight():
+    # Grupo interno "Equipe" com acesso a todos os builds e o titular da conta como tester.
+    gid = None
+    for g in todos(f"/apps/{APP_ID}/betaGroups", limit=50):
+        a = g["attributes"]
+        print("BETA_GRUPO", g["id"], a.get("name"), "interno", a.get("isInternalGroup"))
+        if a.get("name") == "Equipe": gid = g["id"]
+    if not gid:
+        r = send("POST", "/betaGroups", {"data": {"type": "betaGroups", "attributes": {"name": "Equipe", "isInternalGroup": True, "hasAccessToAllBuilds": True},
+            "relationships": {"app": {"data": {"type": "apps", "id": APP_ID}}}}})
+        gid = r.get("data", {}).get("id")
+    print("GRUPO_EQUIPE", gid)
+    if not gid: return
+    usuarios = todos("/users", limit=50)
+    for u in usuarios:
+        a = u["attributes"]
+        print("USUARIO", u["id"], a.get("firstName"), a.get("roles"), "email_ok", bool(a.get("username")))
+    titular = next((u for u in usuarios if "ACCOUNT_HOLDER" in (u["attributes"].get("roles") or [])), usuarios[0] if usuarios else None)
+    if not titular: print("SEM_USUARIO"); return
+    a = titular["attributes"]
+    send("POST", "/betaTesters", {"data": {"type": "betaTesters", "attributes": {"email": a.get("username"), "firstName": a.get("firstName") or "Carlos", "lastName": a.get("lastName") or "Bezerra"},
+        "relationships": {"betaGroups": {"data": [{"type": "betaGroups", "id": gid}]}}}})
+    ts = todos(f"/betaGroups/{gid}/betaTesters", limit=50)
+    print("TESTERS_NO_GRUPO", len(ts), [t["attributes"].get("inviteType") for t in ts])
+    for b in todos(f"/apps/{APP_ID}/builds", limit=5, sort="-uploadedDate"):
+        print("BUILD", b["attributes"].get("version"), b["attributes"].get("processingState"))
+
 def ler():
     gid = None
     for g in todos(f"/apps/{APP_ID}/subscriptionGroups", limit=50):
@@ -182,5 +209,5 @@ def ler():
     if not gid: print("NENHUM_GRUPO")
 
 if __name__ == "__main__":
-    {"ler": ler, "criar": criar, "revisao": revisao, "nota": nota, "notificacoes": notificacoes}.get(sys.argv[1] if len(sys.argv) > 1 else "ler", ler)()
+    {"ler": ler, "criar": criar, "revisao": revisao, "nota": nota, "notificacoes": notificacoes, "testflight": testflight}.get(sys.argv[1] if len(sys.argv) > 1 else "ler", ler)()
     ler()
