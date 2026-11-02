@@ -36,7 +36,7 @@ def get(p, **q):
     if r.status_code >= 300: print("ERRO GET", p, r.status_code, r.text[:600]); return {}
     return r.json()
 def send(m, p, body):
-    r = S.request(m, API + p, headers=h(), data=json.dumps(body))
+    r = S.request(m, API + p, headers=h(), data=json.dumps(body) if body is not None else None)
     ok = r.status_code < 300
     print(("OK " if ok else "ERRO ") + m, p, r.status_code, "" if ok else r.text[:900])
     return r.json() if ok and r.text else {}

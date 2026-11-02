@@ -132,6 +132,8 @@ def revisao():
     for s in todos(f"/subscriptionGroups/{gid}/subscriptions", limit=50):
         sid = s["id"]
         atual = get(f"/subscriptions/{sid}/appStoreReviewScreenshot").get("data")
+        if atual and os.environ.get("SUBSTITUIR") == "1":
+            send("DELETE", f"/subscriptionAppStoreReviewScreenshots/{atual['id']}", None); atual = None
         if atual: print("CAPTURA_JA_EXISTE", s["attributes"]["productId"]); continue
         r = send("POST", "/subscriptionAppStoreReviewScreenshots", {"data": {"type": "subscriptionAppStoreReviewScreenshots",
             "attributes": {"fileName": "assinatura-revisao.png", "fileSize": len(dados)},
