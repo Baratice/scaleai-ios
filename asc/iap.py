@@ -193,7 +193,7 @@ def testflight():
         "relationships": {"betaGroups": {"data": [{"type": "betaGroups", "id": gid}]}}}})
     ts = todos(f"/betaGroups/{gid}/betaTesters", limit=50)
     print("TESTERS_NO_GRUPO", len(ts), [t["attributes"].get("inviteType") for t in ts])
-    for b in todos(f"/apps/{APP_ID}/builds", limit=5, sort="-uploadedDate"):
+    for b in todos("/builds", **{"filter[app]": APP_ID, "sort": "-uploadedDate", "limit": 5}):
         print("BUILD", b["attributes"].get("version"), b["attributes"].get("processingState"))
 
 def ler():
