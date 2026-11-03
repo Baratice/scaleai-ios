@@ -218,6 +218,15 @@ def diag():
         print("APP_PRIVACIDADE", [l["attributes"].get("privacyPolicyUrl") for l in todos(f"/appInfos/226749c2-5c69-42a8-9075-5f8e68476dc0/appInfoLocalizations", limit=20)])
     except Exception as e: print("ERRO_APPINFO", repr(e)[:200])
 
+def recalcular():
+    # Salva de novo cada assinatura (mesma nota e mesmo nivel) para a Apple recalcular o status.
+    gid = grupo()
+    for s_ in todos(f"/subscriptionGroups/{gid}/subscriptions", limit=50):
+        a = s_["attributes"]
+        send("PATCH", f"/subscriptions/{s_['id']}", {"data": {"type": "subscriptions", "id": s_["id"], "attributes": {"reviewNote": NOTA, "familySharable": False}}})
+    for s_ in todos(f"/subscriptionGroups/{gid}/subscriptions", limit=50):
+        print("DEPOIS", s_["attributes"].get("productId"), s_["attributes"].get("state"))
+
 def ler():
     gid = None
     for g in todos(f"/apps/{APP_ID}/subscriptionGroups", limit=50):
@@ -231,5 +240,5 @@ def ler():
     if not gid: print("NENHUM_GRUPO")
 
 if __name__ == "__main__":
-    {"ler": ler, "criar": criar, "revisao": revisao, "nota": nota, "notificacoes": notificacoes, "testflight": testflight, "diag": diag}.get(sys.argv[1] if len(sys.argv) > 1 else "ler", ler)()
+    {"ler": ler, "criar": criar, "revisao": revisao, "nota": nota, "notificacoes": notificacoes, "testflight": testflight, "diag": diag, "recalcular": recalcular}.get(sys.argv[1] if len(sys.argv) > 1 else "ler", ler)()
     ler()
