@@ -196,6 +196,28 @@ def testflight():
     for b in todos("/builds", **{"filter[app]": APP_ID, "sort": "-uploadedDate", "limit": 5}):
         print("BUILD", b["attributes"].get("version"), b["attributes"].get("processingState"))
 
+def diag():
+    # O que falta para as assinaturas ficarem prontas para envio.
+    gid = grupo()
+    for l in todos(f"/subscriptionGroups/{gid}/subscriptionGroupLocalizations", limit=50):
+        print("LOC_GRUPO", l["attributes"].get("locale"), l["attributes"].get("state"))
+    for s_ in todos(f"/subscriptionGroups/{gid}/subscriptions", limit=50):
+        sid = s_["id"]; a = s_["attributes"]
+        print("ASSIN", a.get("productId"), a.get("state"), "periodo", a.get("subscriptionPeriod"), "nota", bool(a.get("reviewNote")))
+        for l in todos(f"/subscriptions/{sid}/subscriptionLocalizations", limit=50):
+            print("  LOC", l["attributes"].get("locale"), l["attributes"].get("state"), len(l["attributes"].get("description") or ""))
+        cap = get(f"/subscriptions/{sid}/appStoreReviewScreenshot").get("data") or {}
+        ca = cap.get("attributes", {})
+        print("  CAPTURA", ca.get("fileName"), ca.get("assetDeliveryState"), (ca.get("imageAsset") or {}).get("width"), (ca.get("imageAsset") or {}).get("height"))
+        disp = get(f"/subscriptions/{sid}/subscriptionAvailability", include="availableTerritories").get("data") or {}
+        print("  DISP", (disp.get("relationships", {}).get("availableTerritories", {}).get("meta") or {}))
+        pr = get(f"/subscriptions/{sid}/prices", **{"filter[territory]": "BRA", "include": "subscriptionPricePoint"})
+        inc = pr.get("included", [])
+        print("  PRECO_BRA", [x["attributes"].get("customerPrice") for x in inc], [p_["attributes"].get("startDate") for p_ in pr.get("data", [])])
+    try:
+        print("APP_PRIVACIDADE", [l["attributes"].get("privacyPolicyUrl") for l in todos(f"/appInfos/226749c2-5c69-42a8-9075-5f8e68476dc0/appInfoLocalizations", limit=20)])
+    except Exception as e: print("ERRO_APPINFO", repr(e)[:200])
+
 def ler():
     gid = None
     for g in todos(f"/apps/{APP_ID}/subscriptionGroups", limit=50):
@@ -209,5 +231,5 @@ def ler():
     if not gid: print("NENHUM_GRUPO")
 
 if __name__ == "__main__":
-    {"ler": ler, "criar": criar, "revisao": revisao, "nota": nota, "notificacoes": notificacoes, "testflight": testflight}.get(sys.argv[1] if len(sys.argv) > 1 else "ler", ler)()
+    {"ler": ler, "criar": criar, "revisao": revisao, "nota": nota, "notificacoes": notificacoes, "testflight": testflight, "diag": diag}.get(sys.argv[1] if len(sys.argv) > 1 else "ler", ler)()
     ler()
