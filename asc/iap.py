@@ -244,6 +244,25 @@ def precos_diag():
         print("  PRECO_FORA_DISP", sorted(set(cont) - terr_disp)[:20])
         print("  EXEMPLO", pr[0]["attributes"] if pr else None)
 
+def planos():
+    # Disponibilidade por tipo de plano (modelo novo da Apple): UPFRONT nos mesmos paises da assinatura.
+    gid = grupo()
+    for s_ in todos(f"/subscriptionGroups/{gid}/subscriptions", limit=50):
+        sid = s_["id"]; pid = s_["attributes"].get("productId")
+        r = S.get(API + f"/subscriptions/{sid}/planAvailabilities", headers=h(), params={"limit": 50})
+        print("PLANOS_GET", pid, r.status_code, r.text[:400])
+        if r.status_code >= 300: continue
+        ja = [x for x in r.json().get("data", []) if x["attributes"].get("planType") == "UPFRONT"]
+        if ja: print("UPFRONT_JA_EXISTE", pid, ja[0]["id"], ja[0]["attributes"]); continue
+        disp = get(f"/subscriptions/{sid}/subscriptionAvailability").get("data") or {}
+        terrs = [t["id"] for t in todos(f"/subscriptionAvailabilities/{disp.get('id')}/availableTerritories", limit=200)]
+        send("POST", "/subscriptionPlanAvailabilities", {"data": {"type": "subscriptionPlanAvailabilities",
+            "attributes": {"planType": "UPFRONT", "availableInNewTerritories": False},
+            "relationships": {"subscription": {"data": {"type": "subscriptions", "id": sid}},
+                "availableTerritories": {"data": [{"type": "territories", "id": t} for t in terrs]}}}})
+    for s_ in todos(f"/subscriptionGroups/{gid}/subscriptions", limit=50):
+        print("DEPOIS", s_["attributes"].get("productId"), s_["attributes"].get("state"))
+
 def ler():
     gid = None
     for g in todos(f"/apps/{APP_ID}/subscriptionGroups", limit=50):
@@ -257,5 +276,5 @@ def ler():
     if not gid: print("NENHUM_GRUPO")
 
 if __name__ == "__main__":
-    {"ler": ler, "criar": criar, "revisao": revisao, "nota": nota, "notificacoes": notificacoes, "testflight": testflight, "diag": diag, "recalcular": recalcular, "precos_diag": precos_diag}.get(sys.argv[1] if len(sys.argv) > 1 else "ler", ler)()
+    {"ler": ler, "criar": criar, "revisao": revisao, "nota": nota, "notificacoes": notificacoes, "testflight": testflight, "diag": diag, "recalcular": recalcular, "precos_diag": precos_diag, "planos": planos}.get(sys.argv[1] if len(sys.argv) > 1 else "ler", ler)()
     ler()
